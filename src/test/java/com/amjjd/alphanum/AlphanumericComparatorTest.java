@@ -62,4 +62,26 @@ public class AlphanumericComparatorTest
 		// ... don't work too well
 		assertTrue(comparator.compare("1.3", "1.15") < 0);
 	}
+
+	@Test
+	public void testLettersAfterEqualNumbers()
+	{
+		Comparator<String> comparator = AlphanumericComparator.forLocale(Locale.ENGLISH);
+		assertTrue(comparator.compare("2AZ", "2ZA") < 0);
+	}
+
+	@Test
+	public void testDifferentLengthNumbers()
+	{
+		Comparator<String> comparator = AlphanumericComparator.forLocale(Locale.ENGLISH);
+		assertTrue(comparator.compare("112A", "22A") > 0);
+	}
+
+	@Test
+	public void testZeroes()
+	{
+		Comparator<String> comparator = AlphanumericComparator.forLocale(Locale.ENGLISH);
+		assertTrue(comparator.compare("00000", "0000") > 0);
+		assertTrue(comparator.compare("02", "1") > 0);
+	}
 }

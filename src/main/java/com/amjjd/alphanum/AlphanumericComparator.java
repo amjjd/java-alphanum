@@ -76,10 +76,10 @@ public class AlphanumericComparator implements Comparator<String>
 
 			int result = 0;
 
-			if(Character.isDigit(ch1))
-				result = Character.isDigit(ch2) ? compareNumbers(str1, str2, pos) : -1;
+			if(isDigit(ch1))
+				result = isDigit(ch2) ? compareNumbers(str1, str2, pos) : -1;
 			else
-				result = Character.isDigit(ch2) ? 1 : compareNonNumeric(str1, str2, pos);
+				result = isDigit(ch2) ? 1 : compareNonNumeric(str1, str2, pos);
 
 			if(result != 0)
 				return result;
@@ -88,22 +88,22 @@ public class AlphanumericComparator implements Comparator<String>
 		return str1.length() - str2.length();
 	}
 
-	private int compareNumbers(String str1, String str2, int[] pos)
+	private int compareNumbers(String str0, String str1, int[] pos)
 	{
 		int delta = 0;
-		int zeroes1 = 0, zeroes2 = 0;
-		int ch1 = -1, ch2 = -1;
+		int zeroes0 = 0, zeroes1 = 0;
+		int ch0 = -1, ch1 = -1;
 
 		// Skip leading zeroes, but keep a count of them.
-		while(pos[0] < str1.length() && isZero(ch1 = str1.codePointAt(pos[0])))
+		while(pos[0] < str0.length() && isZero(ch0 = str0.codePointAt(pos[0])))
+		{
+			zeroes0++;
+			pos[0] += Character.charCount(ch0);
+		}
+		while(pos[1] < str1.length() && isZero(ch1 = str1.codePointAt(pos[1])))
 		{
 			zeroes1++;
-			pos[0] += Character.charCount(ch1);
-		}
-		while(pos[1] < str2.length() && isZero(ch2 = str2.codePointAt(pos[1])))
-		{
-			zeroes2++;
-			pos[1] += Character.charCount(ch2);
+			pos[1] += Character.charCount(ch1);
 		}
 
 		// If one sequence contains more significant digits than the
@@ -112,34 +112,49 @@ public class AlphanumericComparator implements Comparator<String>
 		// unequal pair determines which is the bigger number.
 		while(true)
 		{
-			boolean noMoreDigits1 = (ch1 < 0) || !Character.isDigit(ch1);
-			boolean noMoreDigits2 = (ch2 < 0) || !Character.isDigit(ch2);
+			boolean noMoreDigits0 = (ch0 < 0) || !isDigit(ch0);
+			boolean noMoreDigits1 = (ch1 < 0) || !isDigit(ch1);
 
-			if(noMoreDigits1 && noMoreDigits2)
-				return delta != 0 ? delta : zeroes1 - zeroes2;
-			else if(noMoreDigits1)
+			if(noMoreDigits0 && noMoreDigits1)
+				return delta != 0 ? delta : zeroes0 - zeroes1;
+			else if(noMoreDigits0)
 				return -1;
-			else if(noMoreDigits2)
+			else if(noMoreDigits1)
 				return 1;
-			else if(delta == 0 && ch1 != ch2)
-				delta = valueOf(ch1) - valueOf(ch2);
+			else if(delta == 0 && ch0 != ch1)
+				delta = valueOf(ch0) - valueOf(ch1);
 
-			if(pos[0] < str1.length())
+			if(pos[0] < str0.length())
 			{
-				ch1 = str1.codePointAt(pos[0]);
-				pos[0] += Character.charCount(ch1);
+				ch0 = str0.codePointAt(pos[0]);
+				if(isDigit(ch0))
+					pos[0] += Character.charCount(ch0);
+				else
+					ch0 = -1;
+			}
+			else
+				ch0 = -1;
+			
+			if(pos[1] < str1.length())
+			{
+				ch1 = str1.codePointAt(pos[1]);
+				if(isDigit(ch1))
+					pos[1] += Character.charCount(ch1);
+				else
+					ch1 = -1;
 			}
 			else
 				ch1 = -1;
-			
-			if(pos[1] < str2.length())
-			{
-				ch2 = str2.codePointAt(pos[1]);
-				pos[1] += Character.charCount(ch2);
-			}
-			else
-				ch2 = -1;
 		}
+	}
+
+	private static boolean isDigit(int ch)
+	{
+		return (ch >= '0' && ch <= '9') ||
+		       (ch >= '\u0660' && ch <= '\u0669') ||
+		       (ch >= '\u06F0' && ch <= '\u06F9') ||
+		       (ch >= '\u0966' && ch <= '\u096F') ||
+		       (ch >= '\uFF10' && ch <= '\uFF19');
 	}
 	
 	private static boolean isZero(int ch)
@@ -163,22 +178,22 @@ public class AlphanumericComparator implements Comparator<String>
 		return digit;
 	}
 
-	private int compareNonNumeric(String str1, String str2, int[] pos)
+	private int compareNonNumeric(String str0, String str1, int[] pos)
 	{
 		// find the end of both non-numeric substrings
-		int start1 = pos[0];
-		int ch1 = str1.codePointAt(pos[0]);
-		pos[0] += Character.charCount(ch1);
-		while(pos[0] < str1.length() && !Character.isDigit(ch1 = str1.codePointAt(pos[0])))
-			pos[0] += Character.charCount(ch1);
+		int start0 = pos[0];
+		int ch0 = str0.codePointAt(pos[0]);
+		pos[0] += Character.charCount(ch0);
+		while(pos[0] < str0.length() && !isDigit(ch0 = str0.codePointAt(pos[0])))
+			pos[0] += Character.charCount(ch0);
 		
-		int start2 = pos[1];
-		int ch2 = str2.codePointAt(pos[1]);
-		pos[1] += Character.charCount(ch2);
-		while(pos[1] < str2.length() && !Character.isDigit(ch2 = str2.codePointAt(pos[1])))
-			pos[1] += Character.charCount(ch2);
+		int start1 = pos[1];
+		int ch1 = str1.codePointAt(pos[1]);
+		pos[1] += Character.charCount(ch1);
+		while(pos[1] < str1.length() && !isDigit(ch1 = str1.codePointAt(pos[1])))
+			pos[1] += Character.charCount(ch1);
 		
 		// compare the substrings
-		return collator.compare(str1.substring(start1, pos[0]), str2.substring(start2, pos[1]));
+		return collator.compare(str0.substring(start0, pos[0]), str1.substring(start1, pos[1]));
 	}
 }
